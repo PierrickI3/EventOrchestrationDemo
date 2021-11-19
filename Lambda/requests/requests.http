@@ -1,9 +1,16 @@
 
-### POST Conversation (it will collect converation data & save it to DynamoDB)
-POST http://localhost:8000/dev/conversation-dump
+### POST (local)
+POST http://localhost:8000/dev/chats/disconnected
 Content-Type: application/json
 
 {
-    "id": "3b1aee13-b9f2-4c3b-94d0-452dc902ef4c"    
+    "id": "3b1aee13-b9f2-4c3b-94d0-452dc902ef4c"
 }
 
+### POST (dev)
+POST https://ov55u7an63.execute-api.eu-central-1.amazonaws.com/dev/chats/disconnected
+Content-Type: application/json
+
+{
+    "id": "3b1aee13-b9f2-4c3b-94d0-452dc902ef4c"
+}
