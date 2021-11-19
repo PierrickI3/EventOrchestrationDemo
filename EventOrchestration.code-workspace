@@ -5,10 +5,6 @@
     },
     {
       "path": "Lambda"
-    },
-    {
-      "name": "EventOrchestrationDemo",
-      "path": "."
     }
   ]
 }
