@@ -3,12 +3,21 @@
   "version": "1.0.0",
   "description": "Demo lambda function to demo event orchestration",
   "main": "handler.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PierrickI3/EventOrchestrationDemo"
+  },
   "scripts": {
     "start": "serverless offline start"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "serverless-offline": "^8.0.0"
+    "aws-sdk": "^2.1032.0"
+  },
+  "devDependencies": {
+    "serverless-offline": "^8.2.0",
+    "serverless-plugin-common-excludes": "^4.0.0",
+    "serverless-prune-plugin": "^1.6.1"
   }
 }
