@@ -1,11 +1,7 @@
 # Welcome to serverless. Read the docs
 # https://serverless.com/framework/docs/
 
-# Serverless.yml is the configuration the CLI
-# uses to deploy your code to your provider of choice
-
-# The `service` block is the name of the service
-service: aws-direct-integrations
+service: demo-event-orchestration
 frameworkVersion: '2'
 
 app: process-automation
@@ -17,9 +13,6 @@ custom:
   prune:
     automatic: true
     number: 1
-  # client:
-  #   bucketName: web-chat-demo-s3-bucket
-  #   distributionFolder: html/
 
 provider:
   name: aws
@@ -33,22 +26,83 @@ provider:
     lambda: true
   logRetentionInDays: 7
   timeout: 30
+  environment:
+    S3_DISCONNECTED_CHATS: ${self:resources.Resources.S3DisconnectedChats.Properties.BucketName}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource:
+            - '*'
 
 functions:
-  conversationDump:
-    handler: handler.conversationDump
+  processDisconnectedChat:
+    handler: handler.processDisconnectedChat
     events:
       - http:
-          path: conversation-dump
+          path: chats/disconnected
           method: post
           cors: true
 
+resources:
+  Resources:
+    S3DisconnectedChats:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${opt:stage, self:provider.stage}-demo-disconnected-chats-bucket
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        PublicAccessBlockConfiguration:
+          # If deploying the bucket for the first time, settings below should be set to false otherwise the Bucket Policy creation will fail. Once deployed, set them to true and deploy again.
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+    S3DisconnectedChatsPolicy:
+      DependsOn: S3DisconnectedChats
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: S3DisconnectedChats
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: 's3:*'
+              Resource:
+                Fn::Join:
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - Ref: S3DisconnectedChats
+                    - '/*'
+
 plugins:
   - serverless-offline
+  - serverless-prune-plugin
+  - serverless-plugin-common-excludes
 
 package:
-  exclude:
-    - .git/**
-    - serverless.yml
-    - .serverless/**
-    - requests/**
+  patterns:
+    - '!.serverless/**'
+    - '!serverless.yml'
+    - '!.env'
+    - '!.git/**'
+    - 'requests/**'
