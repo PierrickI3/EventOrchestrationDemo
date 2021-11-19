@@ -1,17 +1,43 @@
 'use strict';
-const gcLib = require('./libs/gc.js');
+const AWS = require('aws-sdk');
 const responseLib = require('./libs/response-lib.js');
-const dynamoDb = require('./libs/dynamoDb.js');
-const moment = require('moment');
+const helpers = require('./libs/helpers');
 
-module.exports.conversationDump = async (event, context, callback) => {
-  console.log('process started');
+const region = process.env.AWS_REGION;
+AWS.config.region = region;
+const s3 = new AWS.S3();
+
+const s3DisconnectedChatsBucket = process.env.S3_DISCONNECTED_CHATS !== '[object Object]' ? process.env.S3_DISCONNECTED_CHATS : `${process.env.STAGE}-demo-disconnected-chats-bucket`;
+
+async function putObjectToBucket(bucket, key, body) {
+  console.log(`putObjectToBucket(). Bucket: ${bucket}, path: ${key}`);
   try {
-  
-    let data = event;
-    //let data = JSON.parse(event.body); // use for Localhost
-    
-    
+    await s3
+      .putObject({
+        Body: body,
+        Key: key,
+        Bucket: bucket,
+      })
+      .promise();
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+module.exports.processDisconnectedChat = async (event) => {
+  console.log('process started:', event);
+  try {
+    //#region Validation
+
+    let data;
+    if (event.body) {
+      data = helpers.getBody(event); // If running on localhost
+    } else {
+      data = event;
+    }
+    console.log('data:', data);
+
     if (!data) {
       console.error('Validation Failed:', data);
       return responseLib.generic(400, {
@@ -19,128 +45,12 @@ module.exports.conversationDump = async (event, context, callback) => {
       });
     }
 
-    if (!data.id) {
-      console.error('Validation Failed:', data);
-      return responseLib.generic(400, {
-        message: 'Missing id in body',
-      });
-    }
+    //#endregion
 
-    
-    await gcLib.login();
-  
-    let bSkipUpdate = false;
-    let conversation = await gcLib.getConversation(data.id);
-    if (!conversation) {    
-      return responseLib.generic(400, {
-        message: 'Failed to obtain conversationId',
-      });
-    }
-
-    let messages = await gcLib.getMessagesForConversationId(data.id);
-    let messageIds = [];
-    
-    messages.participants.forEach(async (participant) => {
-      let newestMsg = moment('2000-01-01 00:00:00');
-      let purpose = participant.purpose;
-      let messages = participant.messages;      
-      let msgId, msgTime;
-      if (messages?.length > 0) {
-        messages.forEach(async (message) => {          
-          msgTime = moment(message.messageTime);
-          if (msgTime.isAfter(newestMsg)) {            
-            newestMsg = msgTime;
-            msgId = message.messageId;        
-          }
-        });
-      }      
-      if (msgId) {
-        console.log(`Newest message id for ${purpose} is ${msgId} at ${msgTime}`);
-        messageIds.push({
-          purpose: purpose,
-          messageTime: msgTime,
-          messageId: msgId,
-        });
-      }
-    });
-    
-  
-    if (messageIds.length > 0) {
-      console.log('try to find newest Message...');
-      
-      const lastMessage = messageIds.sort((a, b) => {
-        return a.messageTime.diff(b.messageTime);
-      }).pop();
-      
-
-      console.log(`Newest messageId is ${lastMessage.messageId} for purpose: ${lastMessage.purpose}`);
-
-      let message = await gcLib.getConversationMessage(data.id, lastMessage.messageId);
-      
-
-      let messageToSave = {
-        id: conversation.id,
-        awsRequestId: context.awsRequestId,
-        startTime: conversation.startTime,
-        endTime: conversation.endTime      
-      }
-      console.log('messageToSave', messageToSave);
-
-      let resp = await dynamoDb.getItem(data.id);
-      if (message?.textBody) {
-        message = message.textBody;
-        console.log('latest message body:', message);
-                
-        if (resp) {
-          // Update existing Item
-          messageToSave = resp;
-          if (!messageToSave[lastMessage.purpose]) messageToSave[lastMessage.purpose] = [];
-         
-          console.log('try to find if messageId already exists...');
-          let q = messageToSave[lastMessage.purpose].find(x => x.messageId === lastMessage.messageId);
-          
-          if (!q) {
-            messageToSave[lastMessage.purpose].push({
-              messageId: lastMessage.messageId,  
-              message: message,
-              messageTime: moment(lastMessage.messageTime).format('YYYY-MM-DD HH:mm:ss'),
-            });
-          } else {
-            bSkipUpdate = true;
-            console.log('MessageId already in Dynamo, skip update.');
-          }
-              
-
-        }  else 
-          messageToSave[lastMessage.purpose] = [{
-            messageId: lastMessage.messageId,  
-            message: message,
-            messageTime: moment(lastMessage.messageTime).format('YYYY-MM-DD HH:mm:ss'),
-          }];  
-        
-        console.log('check if endTime is present', conversation.endTime);
-        if (conversation.endTime) {
-          console.log('endTime present, save only this')
-          messageToSave.endTime = conversation.endTime;
-          bSkipUpdate = false;
-        }
-        console.log('bSkipUpdate',bSkipUpdate);   
-        if (!bSkipUpdate) {
-          resp = await dynamoDb.save(messageToSave);        
-          if (resp)  return responseLib.success({message: 'Success'}) 
-          else 
-            return responseLib.generic({message: 'Failed to save conversation to DynamoDb'})
-        } else 
-          return responseLib.success({message: 'MessageId already exists'})        
- 
-      } 
-      
-    }
-
-
+    await putObjectToBucket(s3DisconnectedChatsBucket, `${data.id}.json`, JSON.stringify(data));
+    return responseLib.success({ message: 'Success' });
   } catch (error) {
-    console.log(error);
-    return responseLib.generic(500, {message: "Failed"});
+    console.error(error);
+    return responseLib.generic(500, { message: 'Failed' });
   }
-      
 };
