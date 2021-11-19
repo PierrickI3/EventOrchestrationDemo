@@ -1,0 +1,9 @@
+
+### POST Conversation (it will collect converation data & save it to DynamoDB)
+POST http://localhost:8000/dev/conversation-dump
+Content-Type: application/json
+
+{
+    "id": "3b1aee13-b9f2-4c3b-94d0-452dc902ef4c"    
+}
+

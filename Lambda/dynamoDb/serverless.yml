@@ -1,0 +1,40 @@
+service: custom-crm-tables
+provider:
+  name: aws 
+  stage: dev 
+  region: eu-central-1
+  profile: ccportal
+  logRetentionInDays: 7
+  timeout: 30
+  deploymentBucket: my.${self:provider.stage}.serverless.deploys
+
+resources:
+  Resources:   
+    CustomCRMDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Delete
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: custom-crm   
+
+  Outputs:   
+    CustomCRMTableArn:
+      Value:
+        Fn::GetAtt:
+          - CustomCRMDynamoDbTable
+          - Arn
+      Export:
+        Name: CustomCRMTableArn
+    CustomCRMTable:
+      Value:
+        Ref: CustomCRMDynamoDbTable
+      Export:
+        Name: CustomCRMDynamoDbTableName

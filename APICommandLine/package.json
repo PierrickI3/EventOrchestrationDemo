@@ -1,0 +1,20 @@
+{
+  "name": "EventOrchestrationDemo",
+  "version": "1.0.0",
+  "description": "Demo of Genesys Cloud Event Orchestrator (Process Automation)",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PierrickI3/EventOrchestrationDemo"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "Pierrick Lozach",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.6.6",
+    "readline": "^1.3.0"
+  }
+}

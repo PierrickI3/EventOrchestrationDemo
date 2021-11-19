@@ -1,0 +1,143 @@
+{
+  "service": {
+    "service": "custom-crm-tables",
+    "serviceObject": {
+      "name": "custom-crm-tables"
+    },
+    "provider": {
+      "name": "aws",
+      "stage": "dev",
+      "region": "eu-central-1",
+      "profile": "ccportal",
+      "logRetentionInDays": 7,
+      "timeout": 30,
+      "deploymentBucket": "my.dev.serverless.deploys",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "CustomCRMDynamoDbTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Delete",
+            "Properties": {
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "ProvisionedThroughput": {
+                "ReadCapacityUnits": 1,
+                "WriteCapacityUnits": 1
+              },
+              "TableName": "custom-crm"
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "my.dev.serverless.deploys",
+            "Export": {
+              "Name": "sls-custom-crm-tables-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "CustomCRMTableArn": {
+            "Value": {
+              "Fn::GetAtt": [
+                "CustomCRMDynamoDbTable",
+                "Arn"
+              ]
+            },
+            "Export": {
+              "Name": "CustomCRMTableArn"
+            }
+          },
+          "CustomCRMTable": {
+            "Value": {
+              "Ref": "CustomCRMDynamoDbTable"
+            },
+            "Export": {
+              "Name": "CustomCRMDynamoDbTableName"
+            }
+          }
+        }
+      }
+    },
+    "pluginsData": {},
+    "functions": {},
+    "resources": {
+      "Resources": {
+        "CustomCRMDynamoDbTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "DeletionPolicy": "Delete",
+          "Properties": {
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "id",
+                "AttributeType": "S"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "id",
+                "KeyType": "HASH"
+              }
+            ],
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 1,
+              "WriteCapacityUnits": 1
+            },
+            "TableName": "custom-crm"
+          }
+        }
+      },
+      "Outputs": {
+        "CustomCRMTableArn": {
+          "Value": {
+            "Fn::GetAtt": [
+              "CustomCRMDynamoDbTable",
+              "Arn"
+            ]
+          },
+          "Export": {
+            "Name": "CustomCRMTableArn"
+          }
+        },
+        "CustomCRMTable": {
+          "Value": {
+            "Ref": "CustomCRMDynamoDbTable"
+          },
+          "Export": {
+            "Name": "CustomCRMDynamoDbTableName"
+          }
+        }
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless.yml",
+    "layers": {},
+    "initialServerlessConfig": {
+      "service": {
+        "$ref": "$[\"service\"][\"serviceObject\"]"
+      },
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "resources": {
+        "$ref": "$[\"service\"][\"resources\"]"
+      }
+    },
+    "isDashboardMonitoringPreconfigured": false
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/custom-crm-tables/dev/1623679681826-2021-06-14T14:08:01.826Z",
+    "artifact": ""
+  }
+}

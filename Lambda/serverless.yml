@@ -1,0 +1,73 @@
+# Welcome to serverless. Read the docs
+# https://serverless.com/framework/docs/
+
+# Serverless.yml is the configuration the CLI
+# uses to deploy your code to your provider of choice
+
+# The `service` block is the name of the service
+service: aws-direct-integrations
+frameworkVersion: '2'
+
+app: process-automation
+
+provider:
+  name: aws
+  stage: dev
+  runtime: nodejs14.x
+  profile: ccportal
+  region: eu-central-1
+  deploymentBucket: my.${self:provider.stage}.serverless.deploys
+  versionFunctions: false
+  tracing:    
+    lambda: true
+  logRetentionInDays: 7
+  timeout: 30
+  environment:    
+    CUSTOMCRM_DYNAMODB_TABLE:
+      'Fn::ImportValue': CustomCRMDynamoDbTableName
+    
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource:
+        - 'Fn::ImportValue': CustomCRMTableArn         
+
+
+# package:
+#   exclude:
+#     - .dynamodb/**
+#     - .nyc_output/**
+#     - coverage/**
+#     - test/**
+#     - .git/**
+#     - serverless.yml
+#     - .serverless/**
+#     - requests/**
+#     - node_modules/puppeteer/.local-chromium/**
+plugins:
+  - serverless-offline
+  - serverless-finch
+
+custom:
+  serverless-offline:
+    httpPort: 8000
+    useChildProcesses: true
+  prune:
+    automatic: true
+    number: 1 
+  # client:
+  #   bucketName: web-chat-demo-s3-bucket
+  #   distributionFolder: html/
+
+
+# The `functions` block defines what code to deploy
+functions:
+  conversationDump:
+    handler: handler.conversationDump    
+    events:
+      - http:
+          path: conversation-dump
+          method: post
+          cors: true
+

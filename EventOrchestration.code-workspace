@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "path": "APICommandLine"
+    },
+    {
+      "path": "Lambda"
+    },
+    {
+      "name": "EventOrchestrationDemo",
+      "path": "."
+    }
+  ]
+}
